@@ -1,0 +1,29 @@
+import { AnalyticsData } from '../types';
+
+export const initialAnalytics: AnalyticsData = {
+  "overview": [
+    { "label": "Total Tasks", "value": 24, "trend": "+4%", "positive": true, "iconName": "Layout" },
+    { "label": "In Progress", "value": 7, "trend": "Active", "positive": true, "iconName": "Clock" },
+    { "label": "Completed", "value": 12, "trend": "+12%", "positive": true, "iconName": "CheckCircle" },
+    { "label": "Efficiency", "value": "94%", "trend": "+2.4%", "positive": true, "iconName": "TrendingUp" }
+  ],
+  "kpi": [
+      { "label": "Completion Rate", "value": "78%" },
+      { "label": "Tasks Completed", "value": 124 },
+      { "label": "Avg. Time per Task", "value": "45m" }
+  ],
+  "weeklyProductivity": [
+    { "name": "Mon", "completed": 4 },
+    { "name": "Tue", "completed": 3 },
+    { "name": "Wed", "completed": 7 },
+    { "name": "Thu", "completed": 5 },
+    { "name": "Fri", "completed": 8 },
+    { "name": "Sat", "completed": 2 },
+    { "name": "Sun", "completed": 1 }
+  ],
+  "taskDistribution": [
+    { "name": "High", "value": 30 },
+    { "name": "Medium", "value": 45 },
+    { "name": "Low", "value": 25 }
+  ]
+};
