@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -9,12 +9,26 @@ import {
   Sparkles,
   Search
 } from 'lucide-react';
+import { api } from '../services/api';
 
-interface SidebarProps {
-  onAiClick: () => void;
-}
+
 
 const Sidebar: React.FC<SidebarProps> = ({ onAiClick }) => {
+  // --- NEW: User State ---
+  const [user, setUser] = useState({ name: 'User', email: 'Pro Plan' });
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        try {
+            setUser(JSON.parse(storedUser));
+        } catch (e) {
+            console.error("Failed to parse user data");
+        }
+    }
+  }, []);
+  // -----------------------
+
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard/home' },
     { icon: CheckSquare, label: 'My Tasks', path: '/dashboard/tasks' },
@@ -64,27 +78,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onAiClick }) => {
 
       {/* Bottom Area: AI & Profile */}
       <div className="p-4 space-y-4">
-        <button 
-            onClick={onAiClick}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl shadow-lg hover:shadow-purple-500/20 transition-all text-sm font-medium"
-        >
-            <Sparkles size={16} />
-            AI Assistant
-        </button>
-
         <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-neutral-800">
             <img 
-                src="https://picsum.photos/100/100" 
+                src={`https://ui-avatars.com/api/?name=${user.name}&background=random`} 
                 alt="Profile" 
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
             />
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">Alex Designer</p>
-                <p className="text-xs text-gray-400 truncate">Pro Plan</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
-            <NavLink to="/login" className="text-gray-400 hover:text-slate-900 dark:hover:text-white">
+            <button onClick={api.logout} className="text-gray-400 hover:text-slate-900 dark:hover:text-white" title="Logout">
                 <LogOut size={18} />
-            </NavLink>
+            </button>
         </div>
       </div>
     </div>

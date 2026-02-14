@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { Bell, Menu, X, Send, Sparkles } from 'lucide-react';
@@ -11,6 +11,21 @@ const DashboardLayout: React.FC = () => {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // --- NEW: User State ---
+  const [user, setUser] = useState({ name: 'User' });
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        try {
+            setUser(JSON.parse(storedUser));
+        } catch (e) {
+            console.error("Failed to parse user data");
+        }
+    }
+  }, []);
+  // -----------------------
 
   // Filter high priority tasks for notifications
   const urgentTasks = MOCK_TASKS.filter(t => t.priority === 'high');
@@ -24,7 +39,7 @@ const DashboardLayout: React.FC = () => {
         <header className="flex justify-between items-center mb-10">
             <div>
                 <h1 className="text-2xl lg:text-3xl font-bold dark:text-white mb-1">
-                    Good Morning, Alex
+                    Good Morning, {user.name.split(' ')[0]}
                 </h1>
                 <p className="text-slate-500 dark:text-gray-400 text-sm">
                    Make today count.
@@ -126,21 +141,7 @@ const DashboardLayout: React.FC = () => {
                                 <Sparkles size={14} />
                             </div>
                             <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-2xl rounded-tl-none text-sm text-slate-700 dark:text-gray-300">
-                                Hello Alex! I've analyzed your project deadlines. You have a board meeting on Tuesday that requires preparation. Should I draft an agenda for you?
-                            </div>
-                        </div>
-                         <div className="flex gap-3 flex-row-reverse">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-neutral-700 flex-shrink-0"></div>
-                            <div className="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none text-sm">
-                                Yes, please focus on the Q3 marketing budget variances.
-                            </div>
-                        </div>
-                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                <Sparkles size={14} />
-                            </div>
-                            <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-2xl rounded-tl-none text-sm text-slate-700 dark:text-gray-300">
-                                working on it...
+                                Hello {user.name.split(' ')[0]}! I've analyzed your project deadlines. You have a board meeting on Tuesday that requires preparation. Should I draft an agenda for you?
                             </div>
                         </div>
                     </div>

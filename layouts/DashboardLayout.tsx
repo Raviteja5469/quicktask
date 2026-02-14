@@ -1,19 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { Bell, Menu, X, Send, Sparkles } from 'lucide-react';
+import { Bell, Menu, X, Send, Sparkles, Loader2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { Sun, Moon, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_TASKS } from '../constants';
+import { api } from '../services/api';
+import { Task } from '../types';
 
 const DashboardLayout: React.FC = () => {
-  const { toggleTheme } = useTheme();
+//   const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
 
-  // Filter high priority tasks for notifications
-  const urgentTasks = MOCK_TASKS.filter(t => t.priority === 'high');
+  // Real Data State
+  const [user, setUser] = useState({ name: 'User' });
+  const [urgentTasks, setUrgentTasks] = useState<Task[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+  useEffect(() => {
+    // 1. Load User
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        try {
+            setUser(JSON.parse(storedUser));
+        } catch (e) {
+            console.error("Failed to parse user data");
+        }
+    }
+
+    // 2. Fetch Urgent Tasks (High Priority & Not Completed)
+    const fetchNotifications = async () => {
+        setLoadingNotifs(true);
+        try {
+            const allTasks = await api.fetchTasks();
+            const highPri = allTasks.filter(
+                t => t.priority === 'high' && t.status !== 'completed'
+            );
+            setUrgentTasks(highPri);
+        } catch (error) {
+            console.error("Failed to fetch notifications");
+        } finally {
+            setLoadingNotifs(false);
+        }
+    };
+
+    fetchNotifications();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-canvas-light dark:bg-canvas-dark text-slate-900 dark:text-white transition-colors duration-300">
@@ -24,7 +60,7 @@ const DashboardLayout: React.FC = () => {
         <header className="flex justify-between items-center mb-10">
             <div>
                 <h1 className="text-2xl lg:text-3xl font-bold dark:text-white mb-1">
-                    Good Morning, Alex
+                    Good Morning, {user.name.split(' ')[0]}
                 </h1>
                 <p className="text-slate-500 dark:text-gray-400 text-sm">
                    Make today count.
@@ -33,11 +69,17 @@ const DashboardLayout: React.FC = () => {
             
             <div className="flex items-center gap-4">
                 <button 
-                    onClick={toggleTheme}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 text-slate-600 dark:text-gray-400"
-                    title="Toggle Theme"
+                    onClick={() => setIsAiOpen(true)}
+                    className="w-[40px] h-[40px] flex items-center justify-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-purple-500/20 transition-all"
                 >
-                    <Menu className="lg:hidden" size={24} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}/>
+                    <Sparkles size={16} />
+                </button>
+                <button 
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors text-slate-700 dark:text-gray-300"
+                    aria-label="Toggle Theme"
+                    >
+                    {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                 </button>
                 
                 {/* Notification Bell */}
@@ -48,7 +90,7 @@ const DashboardLayout: React.FC = () => {
                     >
                         <Bell size={20} />
                         {urgentTasks.length > 0 && (
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-black"></span>
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-black animate-pulse"></span>
                         )}
                     </button>
 
@@ -61,11 +103,16 @@ const DashboardLayout: React.FC = () => {
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                 className="absolute right-0 top-12 w-80 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-gray-100 dark:border-neutral-800 z-50 overflow-hidden"
                             >
-                                <div className="p-4 border-b border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/50">
+                                <div className="p-4 border-b border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/50 flex justify-between items-center">
                                     <h3 className="font-semibold text-sm">Urgent Tasks</h3>
+                                    <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">
+                                        {urgentTasks.length}
+                                    </span>
                                 </div>
                                 <div className="max-h-64 overflow-y-auto">
-                                    {urgentTasks.length > 0 ? (
+                                    {loadingNotifs ? (
+                                        <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-gray-400"/></div>
+                                    ) : urgentTasks.length > 0 ? (
                                         urgentTasks.map(task => (
                                             <div key={task.id} className="p-4 border-b border-gray-50 dark:border-neutral-800 last:border-0 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                                                 <div className="flex justify-between items-start mb-1">
@@ -119,43 +166,11 @@ const DashboardLayout: React.FC = () => {
                             <X size={20} />
                         </button>
                     </div>
-
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                <Sparkles size={14} />
-                            </div>
-                            <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-2xl rounded-tl-none text-sm text-slate-700 dark:text-gray-300">
-                                Hello Alex! I've analyzed your project deadlines. You have a board meeting on Tuesday that requires preparation. Should I draft an agenda for you?
-                            </div>
-                        </div>
-                         <div className="flex gap-3 flex-row-reverse">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-neutral-700 flex-shrink-0"></div>
-                            <div className="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none text-sm">
-                                Yes, please focus on the Q3 marketing budget variances.
-                            </div>
-                        </div>
-                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                <Sparkles size={14} />
-                            </div>
-                            <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-2xl rounded-tl-none text-sm text-slate-700 dark:text-gray-300">
-                                working on it...
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 border-t border-gray-100 dark:border-neutral-800">
-                        <div className="relative">
-                            <input 
-                                type="text" 
-                                placeholder="Ask AI anything..."
-                                className="w-full bg-gray-50 dark:bg-neutral-800 border-none rounded-xl py-3 pl-4 pr-12 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                            />
-                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                                <Send size={14} />
-                            </button>
-                        </div>
+                    
+                    {/* Placeholder for AI Chat */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-10 text-center text-gray-400">
+                         <Sparkles size={48} className="mb-4 opacity-20" />
+                         <p className="text-sm">Connect your Vector Database to enable the AI features.</p>
                     </div>
                 </motion.div>
             </>

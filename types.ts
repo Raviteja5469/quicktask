@@ -1,7 +1,12 @@
-import React from 'react';
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  token: string;
+}
 
 export interface Task {
-  id: string;
+  id: string; // Backend converts _id to id for tasks
   title: string;
   description: string;
   status: 'pending' | 'completed' | 'in-progress';
@@ -15,7 +20,7 @@ export interface StatCardData {
   value: string | number;
   trend?: string;
   positive?: boolean;
-  iconName?: string; // String identifier for the icon
+  iconName?: string; 
 }
 
 export interface AnalyticsData {
