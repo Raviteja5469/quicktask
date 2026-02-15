@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { Task, AnalyticsData, User } from '../types';
 
+
 // ⚠️ CHECK: Ensure your backend terminal says "Running on port 5000"
-const NODE_API_URL = 'http://localhost:5001/api'; 
-const PYTHON_API_URL = 'http://localhost:8000'; 
+const NODE_API_URL = import.meta.env.VITE_NODE_API_URL || 'http://localhost:5001/api';
+const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000';
 
 const nodeClient = axios.create({ baseURL: NODE_API_URL });
 
