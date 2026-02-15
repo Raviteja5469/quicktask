@@ -170,7 +170,7 @@ const DashboardLayout: React.FC = () => {
                     {/* Placeholder for AI Chat */}
                     <div className="flex-1 flex flex-col items-center justify-center p-10 text-center text-gray-400">
                          <Sparkles size={48} className="mb-4 opacity-20" />
-                         <p className="text-sm">Connect your Vector Database to enable the AI features.</p>
+                         <p className="text-sm">Further Enhancement: Vector Database to enable the AI features.</p>
                     </div>
                 </motion.div>
             </>
