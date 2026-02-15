@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
-from bson import ObjectId  # <--- Make sure this is imported
+from bson import ObjectId  
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+from pymongo.uri_parser import parse_uri
 
 load_dotenv()
 
@@ -26,6 +27,28 @@ app.add_middleware(
 # Connect to MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
+
+try:
+    uri_dict = parse_uri(MONGO_URI)
+    db_name = uri_dict.get('database')
+    
+    if not db_name:
+        # Fallback if no DB name is in the URI
+        db_name = "quicktask" 
+        print("⚠️ Warning: No DB name found in URI. Defaulting to 'quicktask'")
+    else:
+        print(f"✅ Connected to Database: {db_name}")
+
+    client = MongoClient(MONGO_URI)
+    db = client[db_name] # <--- Use the extracted name
+    tasks_collection = db.tasks
+
+except Exception as e:
+    print(f"❌ Database Connection Error: {e}")
+    # Fallback for safety
+    client = MongoClient(MONGO_URI)
+    db = client.quicktask
+    tasks_collection = db.tasks
 
 # ⚠️ CRITICAL CHECK: Ensure 'quicktask' matches the DB name in your Atlas URI
 # If your URI is ...mongodb.net/test?..., change this to client.test
