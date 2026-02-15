@@ -34,7 +34,7 @@ try:
     
     if not db_name:
         # Fallback if no DB name is in the URI
-        db_name = "quicktask" 
+        db_name = "test" 
         print("⚠️ Warning: No DB name found in URI. Defaulting to 'quicktask'")
     else:
         print(f"✅ Connected to Database: {db_name}")
