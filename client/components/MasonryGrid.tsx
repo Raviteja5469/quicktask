@@ -3,6 +3,7 @@ import React from 'react';
 interface MasonryGridProps {
   children: React.ReactNode;
   className?: string;
+  onUpdate?: () => void;
 }
 
 const MasonryGrid: React.FC<MasonryGridProps> = ({ children, className = '' }) => {

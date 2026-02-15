@@ -73,6 +73,11 @@ export const api = {
     const response = await nodeClient.post('/tasks', taskData);
     return response.data;
   },
+  
+  updateTaskStatus: async (taskId: string, status: string) => {
+    const response = await nodeClient.put(`/tasks/${taskId}`, { status });
+    return response.data;
+  },
 
   updateTask: async (task: Task): Promise<Task> => {
     const response = await nodeClient.put(`/tasks/${task.id}`, task);

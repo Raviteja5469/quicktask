@@ -1,99 +1,142 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Clock, MoreVertical, Loader2, Trash2, Edit2 } from 'lucide-react';
 import { Task } from '../types';
-import { motion } from 'framer-motion';
-import { Trash2, Check, Edit2, Clock } from 'lucide-react';
+import { api } from '../services/api'; 
 
 interface TaskCardProps {
   task: Task;
-  onEdit?: (task: Task) => void;
-  onDelete?: (taskId: string) => void;
-  onComplete?: (taskId: string) => void;
+  onUpdate?: () => void; 
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onComplete }) => {
-  const priorityColor = {
-    high: 'text-red-500 bg-red-50 dark:bg-red-900/20 dark:text-red-400',
-    medium: 'text-orange-500 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400',
-    low: 'text-green-500 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate }) => {
+  const [updating, setUpdating] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // ✅ FIX 1: Handle both _id (Mongo) and id (Frontend)
+  // This prevents the "undefined" error in your API call
+  const taskId = task._id || (task as any).id; 
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800';
+      default: return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+    }
   };
 
-  const isCompleted = task.status === 'completed';
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === task.status) return;
+    if (!taskId) {
+        console.error("❌ Error: Task ID is missing!", task);
+        return;
+    }
+
+    setUpdating(true);
+    try {
+      console.log(`🚀 Updating Task: ${taskId} -> ${newStatus}`);
+      await api.updateTaskStatus(taskId, newStatus);
+      if (onUpdate) onUpdate(); 
+    } catch (error) {
+      console.error("Failed to update status", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if(!taskId) return;
+    if(confirm('Are you sure you want to delete this task?')) {
+        try {
+            await api.deleteTask(taskId); // Ensure you have this in api.ts
+            if (onUpdate) onUpdate();
+        } catch (e) { console.error(e); }
+    }
+  }
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: isCompleted ? 0.6 : 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className={`group relative mb-6 break-inside-avoid rounded-2xl p-6 transition-all duration-300
-        ${isCompleted ? 'bg-gray-50 dark:bg-neutral-900/50' : 'bg-white dark:bg-neutral-900'}
-        border border-gray-100 dark:border-neutral-800
-        shadow-sm hover:shadow-xl dark:hover:shadow-primary/5
-        overflow-hidden`}
-    >
-        {/* Accent Bar for Dark Mode aesthetics */}
-        <div className={`absolute top-0 left-0 w-1 h-full transition-opacity duration-300 
-            ${task.priority === 'high' ? 'bg-primary' : 'bg-transparent'} 
-            dark:opacity-100 opacity-0`} 
-        />
-
+    <div className="group break-inside-avoid mb-6 bg-white dark:bg-neutral-900 rounded-2xl p-5 shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-neutral-800 transition-all duration-200 relative">
+      
+      {/* Header: Priority & Menu */}
       <div className="flex justify-between items-start mb-3">
-        <span className={`px-2 py-1 text-xs font-semibold rounded-md ${priorityColor[task.priority]}`}>
-          {task.priority.toUpperCase()}
+        <span className={`text-xs font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
+          task.priority === 'high' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
+          task.priority === 'medium' ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' :
+          'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+        }`}>
+          {task.priority}
         </span>
-        
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-             {onComplete && !isCompleted && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onComplete(task.id); }}
-                    className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
-                    title="Mark as Completed"
-                >
-                    <Check size={14} />
-                </button>
-             )}
-             {onEdit && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-                    className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-500 dark:text-gray-400"
-                    title="Edit Task"
-                >
-                    <Edit2 size={14} />
-                </button>
-             )}
-             {onDelete && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-                    className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
-                    title="Delete Task"
-                >
-                    <Trash2 size={14} />
-                </button>
-             )}
+
+        {/* ✅ FIX 2: Proper Dropdown Menu */}
+        <div className="relative" ref={menuRef}>
+            <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-400 transition-colors"
+            >
+                <MoreVertical size={16} />
+            </button>
+
+            {showMenu && (
+                <div className="absolute right-0 top-8 w-32 bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-gray-100 dark:border-neutral-700 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    <button className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                        <Edit2 size={14} /> Edit
+                    </button>
+                    <button 
+                        onClick={handleDelete}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                    >
+                        <Trash2 size={14} /> Delete
+                    </button>
+                </div>
+            )}
         </div>
       </div>
 
-      <h3 className={`text-lg font-bold text-slate-900 dark:text-gray-100 mb-2 leading-tight ${isCompleted ? 'line-through text-gray-400 dark:text-gray-600' : ''}`}>
-        {task.title}
-      </h3>
-      
-      <p className="text-sm text-slate-500 dark:text-gray-400 mb-4 leading-relaxed">
+      {/* Title & Description */}
+      <h3 className="font-bold text-gray-900 dark:text-white mb-2 leading-tight">{task.title}</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 mb-4">
         {task.description}
       </p>
 
-      <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50 dark:border-neutral-800">
-        <div className="flex gap-2 flex-wrap">
-            {task.tags.map(tag => (
-                <span key={tag} className="text-xs text-gray-400 dark:text-gray-500">#{tag}</span>
-            ))}
+      {/* Footer: Date & Status Dropdown */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-neutral-800">
+        <div className="flex items-center text-xs text-gray-400">
+          <Clock size={12} className="mr-1" />
+          {new Date(task.dueDate).toLocaleDateString()}
         </div>
-        <div className="flex items-center text-xs text-gray-400 font-medium whitespace-nowrap ml-2">
-            <Clock size={12} className="mr-1" />
-            {task.dueDate}
+
+        {/* Status Badge / Dropdown */}
+        <div className="relative">
+          {updating ? (
+            <Loader2 size={16} className="animate-spin text-gray-400" />
+          ) : (
+            <select
+              value={task.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className={`
+                appearance-none cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-full border outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-neutral-900
+                ${getStatusColor(task.status)}
+              `}
+            >
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
