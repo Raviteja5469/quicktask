@@ -28,6 +28,11 @@ app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
+app.use((req, res, next) => {
+    console.log(`👉 Request received: ${req.method} ${req.url}`);
+    next();
+});     
+
 // 2. Your Task Routes
 app.use('/api/tasks', require('./routes/tasksRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
