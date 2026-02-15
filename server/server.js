@@ -12,7 +12,8 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:3000', // Explicitly allow your React/Vite dev server
+    // origin: 'http://localhost:3000', // Explicitly allow your React/Vite dev server
+    origin: 'https://quicktask-ji8k.vercel.app/',  // Allow the deployed frontend
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
