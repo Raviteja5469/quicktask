@@ -62,3 +62,7 @@ Thumbs.db
 coverage/
 
 
+.Analytics_service/.env
+**/.env
+
+
