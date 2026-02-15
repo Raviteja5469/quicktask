@@ -5,7 +5,6 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-from pymongo.uri_parser import parse_uri
 
 load_dotenv()
 
@@ -15,9 +14,9 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[            
-        "http://localhost:3000",              # Local React (Standard)
-        "https://quicktask-ji8k.vercel.app",  # 👈 YOUR VERCEL APP (No slash)
-        "https://quicktask-ji8k.vercel.app/"  # 👈 YOUR VERCEL APP (With slash, just in case)
+        "http://localhost:3000",             
+        "https://quicktask-ji8k.vercel.app",  
+        "https://quicktask-ji8k.vercel.app/"  
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -28,32 +27,14 @@ app.add_middleware(
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 
-try:
-    uri_dict = parse_uri(MONGO_URI)
-    db_name = uri_dict.get('database')
-    
-    if not db_name:
-        # Fallback if no DB name is in the URI
-        db_name = "test" 
-        print("⚠️ Warning: No DB name found in URI. Defaulting to 'quicktask'")
-    else:
-        print(f"✅ Connected to Database: {db_name}")
-
-    client = MongoClient(MONGO_URI)
-    db = client[db_name] # <--- Use the extracted name
-    tasks_collection = db.tasks
-
-except Exception as e:
-    print(f"❌ Database Connection Error: {e}")
-    # Fallback for safety
-    client = MongoClient(MONGO_URI)
-    db = client.quicktask
-    tasks_collection = db.tasks
-
-# ⚠️ CRITICAL CHECK: Ensure 'quicktask' matches the DB name in your Atlas URI
-# If your URI is ...mongodb.net/test?..., change this to client.test
-db = client.quicktask 
+# ---------------------------------------------------------
+# ✅ FIX: Force connection to the 'test' database
+# Based on your screenshots, Mongoose saved your data here.
+# ---------------------------------------------------------
+db = client.test  
 tasks_collection = db.tasks
+
+print(f"✅ Analytics Service Connected to Database: {db.name}")
 
 @app.get("/")
 def read_root():
@@ -63,7 +44,6 @@ def read_root():
 def get_user_analytics(user_id: str):
     try:
         # 1. CONVERT STRING ID TO OBJECTID
-        # Node.js Mongoose stores user references as ObjectIds, not strings.
         try:
             user_oid = ObjectId(user_id)
         except:
@@ -72,7 +52,7 @@ def get_user_analytics(user_id: str):
         # 2. USE OBJECTID IN QUERY
         query = {"user": user_oid} 
         
-        # Debug Print (Optional: Check your terminal to see if it finds docs)
+        # Debug Print
         count = tasks_collection.count_documents(query)
         print(f"Found {count} tasks for user {user_id}")
 
@@ -93,10 +73,8 @@ def get_user_analytics(user_id: str):
         pipeline = [
             {
                 "$match": {
-                    "user": user_oid, # Use ObjectId here too
+                    "user": user_oid,
                     "status": "completed",
-                    # Note: Ensure your tasks actually HAVE 'updatedAt' field
-                    # If not, this part will return 0. 
                     "updatedAt": {"$gte": seven_days_ago}
                 }
             },
