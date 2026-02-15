@@ -13,8 +13,13 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["http://localhost:3000"], 
-    allow_origins=["https://quicktask-ji8k.vercel.app/"],  
+    allow_origins=[            
+        "http://localhost:3000",              # Local React (Standard)
+        "https://quicktask-ji8k.vercel.app",  # 👈 YOUR VERCEL APP (No slash)
+        "https://quicktask-ji8k.vercel.app/"  # 👈 YOUR VERCEL APP (With slash, just in case)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
