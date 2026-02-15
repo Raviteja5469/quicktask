@@ -8,6 +8,23 @@ const PYTHON_API_URL = import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:
 
 const nodeClient = axios.create({ baseURL: NODE_API_URL });
 
+nodeClient.interceptors.request.use(request => {
+    console.log('🚀 Starting Request:', request.method?.toUpperCase(), request.url);
+    return request;
+});
+
+// 👇 ADD THIS RESPONSE INTERCEPTOR (Optional but helpful)
+nodeClient.interceptors.response.use(
+    response => {
+        console.log('✅ Response:', response.status, response.config.url);
+        return response;
+    },
+    error => {
+        console.error('❌ Error:', error.response?.status, error.config?.url);
+        return Promise.reject(error);
+    }
+);
+
 // Interceptor: This is where the "Magic" happens
 // We attach the token to every request so the backend knows who we are.
 nodeClient.interceptors.request.use((config) => {
